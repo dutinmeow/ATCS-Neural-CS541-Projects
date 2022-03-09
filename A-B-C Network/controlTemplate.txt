@@ -1,0 +1,14 @@
+numInputs 
+numHiddens
+numOutputs
+Mode(train/run)
+Randomized Weight Lower Bound
+Randomized Weight Upper Bound
+Max Iterations
+Min Error
+Lambda
+
+
+(2/5/3) and (2/20/3) should converge
+(2/2/3) should not converge, final weights should be (1, 1, .7)
+(2/1/3) should not converge, final values should be (0.3, .8, .5)
