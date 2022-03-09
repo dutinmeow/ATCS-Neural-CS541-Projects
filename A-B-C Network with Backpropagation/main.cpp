@@ -211,7 +211,7 @@ namespace train
       // allocate memory for hidden layer
       hiddens = new double[numHiddens];
       hiddenWeights = new double*[numHiddens];
-		hiddenThetas = new double[numHiddens];
+      hiddenThetas = new double[numHiddens];
 
       // allocate memory for hidden weights
       for (size_t j = 0; j < numHiddens; j++)
@@ -432,7 +432,7 @@ namespace train
                }
 
                outputs[i] = activationFunction(outputTheta);
-					psi[i] = (trainOutput[t][i] - outputs[i]) * derivActivationFunction(outputTheta);
+               psi[i] = (trainOutput[t][i] - outputs[i]) * derivActivationFunction(outputTheta);
             }
 
             for (size_t j = 0; j < numHiddens; j++)
@@ -441,7 +441,7 @@ namespace train
                for (size_t i = 0; i < numOutputs; i++)
                {
                   Omega += psi[i] * hiddenWeights[j][i];
-                  hiddenWeights[j][i] += learningFactor * hiddens[j] * psi[i]; // please don't break
+                  hiddenWeights[j][i] += learningFactor * hiddens[j] * psi[i];
                }
 
                double Psi = Omega * derivActivationFunction(hiddenThetas[j]);
@@ -449,7 +449,7 @@ namespace train
                {
                   inputWeights[k][j] += learningFactor * inputs[k] * Psi;
                }
-            }
+            } // for (size_t j = 0; j < numHiddens; j++)
          } // for (size_t t = 0; t < numTestCases; t++)
 
          maxError = 0.0;
