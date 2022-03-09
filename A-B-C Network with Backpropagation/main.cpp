@@ -443,8 +443,7 @@ namespace train
             // determine error and calculate necessary changes
             for (size_t i = 0; i < numOutputs; i++)
             {
-               double omega = trainOutput[t][i] - outputs[i];
-               psi[i] = omega * derivActivationFunction(outputThetas[i]);
+               psi[i] = (trainOutput[t][i] - outputs[i]) * derivActivationFunction(outputThetas[i]);
             }
 
             for (size_t j = 0; j < numHiddens; j++)
@@ -453,33 +452,12 @@ namespace train
                for (size_t i = 0; i < numOutputs; i++)
                {
                   Omega += psi[i] * hiddenWeights[j][i];
-                  double partial = -hiddens[j] * psi[i];
-                  dhiddenWeights[j][i] = -learningFactor * partial;
-                  hiddenWeights[j][i] += dhiddenWeights[j][i]; // please don't break
+                  hiddenWeights[j][i] += learningFactor * hiddens[j] * psi[i]; // please don't break
                }
                double Psi = Omega * derivActivationFunction(hiddenThetas[j]);
                for (size_t k = 0; k < numInputs; k++)
                {
-                  double partial = -inputs[k] * Psi;
-                  dinputWeights[k][j] = -learningFactor * partial;
-                  inputWeights[k][j] += dinputWeights[k][j];
-               }
-            }
-
-            // apply changes to weights
-            for (size_t k = 0; k < numInputs; k++)
-            {
-               for (size_t j = 0; j < numHiddens; j++)
-               {
-                  inputWeights[k][j] += dinputWeights[k][j];
-               }
-            }
-
-            for (size_t j = 0; j < numHiddens; j++)
-            {
-               for (size_t i = 0; i < numOutputs; i++)
-               {
-                  hiddenWeights[j][i] += dhiddenWeights[j][i];
+                  inputWeights[k][j] += learningFactor * inputs[k] * Psi;
                }
             }
          } // for (size_t t = 0; t < numTestCases; t++)

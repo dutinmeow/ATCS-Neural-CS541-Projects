@@ -1,6 +1,11 @@
 3
+20
 3
-3
-run
-inputs.txt
+train
+train.txt
 weights.txt
+.1
+1.5
+100000
+0.0007
+.3
