@@ -38,17 +38,14 @@
 size_t numInputs;             // number of nodes in input layer
 double *inputs;               // values of nodes in the input layer
 double **inputWeights;        // weights of edges coming from the input layer
-double **dinputWeights;       // change in input weights (for training only)
 
 size_t numHiddens;            // number of nodes in hidden layer
 double *hiddens;              // values of nodes in the hidden layer
 double **hiddenWeights;       // weights of edges coming from the hidden layer
-double **dhiddenWeights;      // change in hidden weights (for training only)
-double *hiddenThetas;         // values of Theta for nodes in the hidden layer
+double *hiddenThetas;         // values of Theta for nodes in the hidden layer (for training only)
 
 size_t numOutputs;            // number of nodes in output layer
 double *outputs;              // output value
-double *outputThetas;         // value of Theta for output node
 double *psi;                  // value of psi for output nodes (for training only)
 
 size_t numTestCases;          // number of test cases for training
@@ -204,31 +201,26 @@ namespace train
       // allocate memory for input layer
       inputs = new double[numInputs];
       inputWeights = new double*[numInputs];
-      dinputWeights = new double*[numInputs];
 
       // allocate memory for input weights
       for (size_t k = 0; k < numInputs; k++)
       {
          inputWeights[k] = new double[numHiddens];
-         dinputWeights[k] = new double[numHiddens];
       }
 
       // allocate memory for hidden layer
       hiddens = new double[numHiddens];
       hiddenWeights = new double*[numHiddens];
-      dhiddenWeights = new double*[numHiddens];
-      hiddenThetas = new double[numHiddens];
+		hiddenThetas = new double[numHiddens];
 
       // allocate memory for hidden weights
       for (size_t j = 0; j < numHiddens; j++)
       {
          hiddenWeights[j] = new double[numOutputs];
-         dhiddenWeights[j] = new double[numOutputs];
       }
 
       // allocate memory for output layer
       outputs = new double[numOutputs];
-      outputThetas = new double[numOutputs];
       psi = new double[numOutputs];
 
       // allocate memory for training data
@@ -419,7 +411,7 @@ namespace train
             // copy current test case inputs into network
             std::copy_n(trainInput[t], numInputs, inputs);
 
-            // run test case through network
+            // run test case through network and update psi array
             for (size_t j = 0; j < numHiddens; j++)
             {
                hiddenThetas[j] = 0.0;
@@ -427,23 +419,20 @@ namespace train
                {
                   hiddenThetas[j] += inputs[k] * inputWeights[k][j];
                }
+
                hiddens[j] = activationFunction(hiddenThetas[j]);
             }
 
             for (size_t i = 0; i < numOutputs; i++)
             {
-               outputThetas[i] = 0.0;
+               double outputTheta = 0.0;
                for (size_t j = 0; j < numHiddens; j++)
                {
-                  outputThetas[i] += hiddens[j] * hiddenWeights[j][i];
+                  outputTheta += hiddens[j] * hiddenWeights[j][i];
                }
-               outputs[i] = activationFunction(outputThetas[i]);
-            }
 
-            // determine error and calculate necessary changes
-            for (size_t i = 0; i < numOutputs; i++)
-            {
-               psi[i] = (trainOutput[t][i] - outputs[i]) * derivActivationFunction(outputThetas[i]);
+               outputs[i] = activationFunction(outputTheta);
+					psi[i] = (trainOutput[t][i] - outputs[i]) * derivActivationFunction(outputTheta);
             }
 
             for (size_t j = 0; j < numHiddens; j++)
@@ -454,6 +443,7 @@ namespace train
                   Omega += psi[i] * hiddenWeights[j][i];
                   hiddenWeights[j][i] += learningFactor * hiddens[j] * psi[i]; // please don't break
                }
+
                double Psi = Omega * derivActivationFunction(hiddenThetas[j]);
                for (size_t k = 0; k < numInputs; k++)
                {
@@ -483,12 +473,12 @@ namespace train
 
             for (size_t i = 0; i < numOutputs; i++)
             {
-               outputThetas[i] = 0.0;
+               double outputTheta = 0.0;
                for (size_t j = 0; j < numHiddens; j++)
                {
-                  outputThetas[i] += hiddens[j] * hiddenWeights[j][i];
+                  outputTheta += hiddens[j] * hiddenWeights[j][i];
                }
-               outputs[i] = activationFunction(outputThetas[i]);
+               outputs[i] = activationFunction(outputTheta);
             }
 
             // calculates error
@@ -618,12 +608,12 @@ namespace train
 
          for (size_t i = 0; i < numOutputs; i++)
          {
-            outputThetas[i] = 0.0;
+            double outputTheta = 0.0;
             for (size_t j = 0; j < numHiddens; j++)
             {
-               outputThetas[i] += hiddens[j] * hiddenWeights[j][i];
+               outputTheta += hiddens[j] * hiddenWeights[j][i];
             }
-            outputs[i] = activationFunction(outputThetas[i]);
+            outputs[i] = activationFunction(outputTheta);
          }
 
          double error = 0.0;
@@ -694,7 +684,6 @@ namespace run
       // allocate memory for hidden layer
       hiddens = new double[numHiddens];
       hiddenWeights = new double*[numHiddens];
-      hiddenThetas = new double[numHiddens];
 
       // allocate memory for hidden weights
       for (size_t j = 0; j < numHiddens; j++)
@@ -704,7 +693,6 @@ namespace run
 
       // allocate memory for output layer
       outputs = new double[numOutputs];
-      outputThetas = new double[numOutputs];
    } // void allocateMemory()
 
    /**
@@ -841,22 +829,22 @@ namespace run
    {
       for (size_t j = 0; j < numHiddens; j++)
       {
-         hiddenThetas[j] = 0.0;
+         double hiddenTheta = 0.0;
          for (size_t k = 0; k < numInputs; k++)
          {
-            hiddenThetas[j] += inputs[k] * inputWeights[k][j];
+            hiddenTheta += inputs[k] * inputWeights[k][j];
          }
-         hiddens[j] = activationFunction(hiddenThetas[j]);
+         hiddens[j] = activationFunction(hiddenTheta);
       }
 
       for (size_t i = 0; i < numOutputs; i++)
       {
-         outputThetas[i] = 0.0;
+         double outputTheta = 0.0;
          for (size_t j = 0; j < numHiddens; j++)
          {
-            outputThetas[i] += hiddens[j] * hiddenWeights[j][i];
+            outputTheta += hiddens[j] * hiddenWeights[j][i];
          }
-         outputs[i] = activationFunction(outputThetas[i]);
+         outputs[i] = activationFunction(outputTheta);
       }
    } // void runNetwork()
 
