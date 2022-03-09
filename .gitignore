@@ -2,5 +2,5 @@
 */.DS_Store
 **/.DS_Store
 a.out
-*/a.out
-**/a.out
+Projects/a.out
+Projects/*/a.out
