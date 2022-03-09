@@ -1,9 +1,9 @@
-#define _GLIBCXX_DEBUG
 /**
  * @author Dustin Miao
  * @version February 28 2022
  *
  * An A-B-C neural network with file Input/Output
+ * and backpropagation
  *
  * Methods:
  * - double randomWeight()
@@ -35,35 +35,35 @@
 #include <random>
 #include <sstream>
 
-size_t numInputs;          	// number of nodes in input layer
-double *inputs;            	// values of nodes in the input layer
-double **inputWeights;     	// weights of edges coming from the input layer
-double **dinputWeights;    	// change in input weights (for training only)
+size_t numInputs;             // number of nodes in input layer
+double *inputs;               // values of nodes in the input layer
+double **inputWeights;        // weights of edges coming from the input layer
+double **dinputWeights;       // change in input weights (for training only)
 
-size_t numHiddens;         	// number of nodes in hidden layer
-double *hiddens;           	// values of nodes in the hidden layer
-double **hiddenWeights;    	// weights of edges coming from the hidden layer
-double **dhiddenWeights;   	// change in hidden weights (for training only)
-double *hiddenThetas;      	// values of Theta for nodes in the hidden layer
+size_t numHiddens;            // number of nodes in hidden layer
+double *hiddens;              // values of nodes in the hidden layer
+double **hiddenWeights;       // weights of edges coming from the hidden layer
+double **dhiddenWeights;      // change in hidden weights (for training only)
+double *hiddenThetas;         // values of Theta for nodes in the hidden layer
 
-size_t numOutputs;         	// number of nodes in output layer
-double *outputs;           	// output value
-double *outputThetas;      	// value of Theta for output node
-double *psi;               	// value of psi for output nodes (for training only)
+size_t numOutputs;            // number of nodes in output layer
+double *outputs;              // output value
+double *outputThetas;         // value of Theta for output node
+double *psi;                  // value of psi for output nodes (for training only)
 
-size_t numTestCases;       	// number of test cases for training
-double **trainInput;       	// input for training data
-double **trainOutput;      	// expected outputs for training data
+size_t numTestCases;          // number of test cases for training
+double **trainInput;          // input for training data
+double **trainOutput;         // expected outputs for training data
 
-double randomWeightMin;    	// lower bound for initial randomized weights
-double randomWeightMax;    	// upper bound for initial randomized weights
-size_t maxIterations;      	// maximum number of allowed iterations for training
-double errorThreshold;     	// error threshold to finish training
-double learningFactor;     	// learning factor
-size_t iteration;          	// number of iterations
-double maxError;           	// maximum error over all test cases
+double randomWeightMin;       // lower bound for initial randomized weights
+double randomWeightMax;       // upper bound for initial randomized weights
+size_t maxIterations;         // maximum number of allowed iterations for training
+double errorThreshold;        // error threshold to finish training
+double learningFactor;        // learning factor
+size_t iteration;             // number of iterations
+double maxError;              // maximum error over all test cases
 
-std::string mode;         		// current mode (either "train" or "run")
+std::string mode;               // current mode (either "train" or "run")
 std::string controlFileName;  // relative path of control file
 std::string trainFileName;    // relative path of train data file (for training only)
 std::string inputsFileName;   // relative path of inputs file (for running only)
@@ -134,11 +134,11 @@ void configure()
 
       if (mode == "train")
       {
-			std::getline(controlFile, line);
-			trainFileName = line;
+         std::getline(controlFile, line);
+         trainFileName = line;
 
-			std::getline(controlFile, line);
-			weightsFileName = line;
+         std::getline(controlFile, line);
+         weightsFileName = line;
 
          // load random weight minimum
          std::getline(controlFile, line);
@@ -175,14 +175,14 @@ void configure()
             trainFile.close();
          }
       } // if (mode == "train")
-		else if (mode == "run")
-		{
-			std::getline(controlFile, line);
-			inputsFileName = line;
+      else if (mode == "run")
+      {
+         std::getline(controlFile, line);
+         inputsFileName = line;
 
-			std::getline(controlFile, line);
-			weightsFileName = line;
-		}
+         std::getline(controlFile, line);
+         weightsFileName = line;
+      }
 
       controlFile.close();
    } // if (controlFile.is_open())
@@ -272,7 +272,7 @@ namespace train
 
    /**
     * @brief Loads training data from the file trainFileName, which was to 
-	 * 	be specified within the control file. 
+    *   be specified within the control file. 
     * @precondition numInputs and numTestCases have been initialized to their
     *    appropriate values, and space has been allocated in trainInput and
     *    trainOutput. The file exists, and it has the number of lines
@@ -326,12 +326,12 @@ namespace train
       printf("Train Mode:\n");
       printf("==================================================================\n");
 
-		// print file locations
-		printf("control file path = \"%s\"\n", controlFileName.c_str());
-		printf("train file path = \"%s\"\n", trainFileName.c_str());
-		printf("weights file path = \"%s\"\n", weightsFileName.c_str());
+      // print file locations
+      printf("control file path = \"%s\"\n", controlFileName.c_str());
+      printf("train file path = \"%s\"\n", trainFileName.c_str());
+      printf("weights file path = \"%s\"\n", weightsFileName.c_str());
 
-		printf("==================================================================\n");
+      printf("==================================================================\n");
 
       // prints test cases
       printf("numTestCases = %lu\n", numTestCases);
@@ -445,11 +445,6 @@ namespace train
             {
                double omega = trainOutput[t][i] - outputs[i];
                psi[i] = omega * derivActivationFunction(outputThetas[i]);
-               for (size_t j = 0; j < numHiddens; j++)
-               {
-                  double partial = -hiddens[j] * psi[i];
-                  dhiddenWeights[j][i] = -learningFactor * partial;
-               }
             }
 
             for (size_t j = 0; j < numHiddens; j++)
@@ -458,12 +453,16 @@ namespace train
                for (size_t i = 0; i < numOutputs; i++)
                {
                   Omega += psi[i] * hiddenWeights[j][i];
+                  double partial = -hiddens[j] * psi[i];
+                  dhiddenWeights[j][i] = -learningFactor * partial;
+                  hiddenWeights[j][i] += dhiddenWeights[j][i]; // please don't break
                }
                double Psi = Omega * derivActivationFunction(hiddenThetas[j]);
                for (size_t k = 0; k < numInputs; k++)
                {
                   double partial = -inputs[k] * Psi;
                   dinputWeights[k][j] = -learningFactor * partial;
+                  inputWeights[k][j] += dinputWeights[k][j];
                }
             }
 
@@ -533,11 +532,11 @@ namespace train
 
    /**
     * @brief Saves the final weight values to weightsFileName, which was 
-	 * 	to be specified within the control file. 
+    *    to be specified within the control file. 
     * @precondition All relevant variables have been initialized and have
     *    memory allocated for them.
     * @postcondition The file located at weightsFileName 
-	 * 	has had the weights updated to their new calculated values.
+    *    has had the weights updated to their new calculated values.
     * @return Nothing.
     */
    void saveWeights()
@@ -733,7 +732,7 @@ namespace run
    /**
     * @brief Loads input data from the file inputsFileName 
     *    and loads weight data from the file weightsFileName, both of which
-	 * 	are to be specified in the control file. 
+    *    are to be specified in the control file. 
     * @precondition All relevant variables have been initialized and have
     *    memory allocated for them. The inputs file exists, and it must have
     *    exactly numInputs number of lines, each line with a single value.
@@ -800,12 +799,12 @@ namespace run
       printf("Run Mode:\n");
       printf("==================================================================\n");
 
-		// print file locations
-		printf("control file path = \"%s\"\n", controlFileName.c_str());
-		printf("inputs file path = \"%s\"\n", inputsFileName.c_str());
-		printf("weights file path = \"%s\"\n", weightsFileName.c_str());
+      // print file locations
+      printf("control file path = \"%s\"\n", controlFileName.c_str());
+      printf("inputs file path = \"%s\"\n", inputsFileName.c_str());
+      printf("weights file path = \"%s\"\n", weightsFileName.c_str());
 
-		printf("==================================================================\n");
+      printf("==================================================================\n");
 
       // prints inputs
       printf("Inputs:\n");
@@ -896,7 +895,7 @@ namespace run
          printf("%f", outputs[i]);
          if (i < numOutputs - 1) printf(", ");
       }
-		printf("}\n");
+      printf("}\n");
 
       printf("==================================================================\n");
    }
@@ -904,21 +903,21 @@ namespace run
 
 /**
  * @brief Executes the neural network with instructions specified in a file passed
- * 	through the command line. 
+ *    through the command line. 
  * @precondition There must be at least one argument passed in the execution of the 
- * 	program, containing the relative path of the control file. The control file is
- * 	to hold the following information, one per line, in the following order: 
- * 	numInputs(positive integer), numHiddens(positive integer), mode("train"/"run"). 
- * 	If the mode is "train", then the file should also contain: randomWeightMin(a double),
- * 	randomWeightMax(a double greater than randomWeightMin), maxIterations
- * 	(a positive integer), errorThreshold(a non-negative real), and learningFactor
- * 	(a positive double).
+ *    program, containing the relative path of the control file. The control file is
+ *    to hold the following information, one per line, in the following order: 
+ *    numInputs(positive integer), numHiddens(positive integer), mode("train"/"run"). 
+ *    If the mode is "train", then the file should also contain: randomWeightMin(a double),
+ *    randomWeightMax(a double greater than randomWeightMin), maxIterations
+ *    (a positive integer), errorThreshold(a non-negative real), and learningFactor
+ *    (a positive double).
  */
 int main(int argc, char *argv[])
 {
-	// get control file from command line
+   // get control file from command line
    assert(2 <= argc); // first argument (index 0 of argv) is always the name of the program
-	controlFileName = argv[1]; // second arguemnt (index 1 of argv) should be file path of control file
+   controlFileName = argv[1]; // second arguemnt (index 1 of argv) should be file path of control file
 
    configure();
 

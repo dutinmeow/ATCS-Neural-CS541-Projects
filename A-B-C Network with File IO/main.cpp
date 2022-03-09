@@ -1,4 +1,3 @@
-#define _GLIBCXX_DEBUG
 /**
  * @author Dustin Miao
  * @version February 28 2022
