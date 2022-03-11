@@ -2,8 +2,7 @@
  * @author Dustin Miao
  * @version February 28 2022
  *
- * An A-B-C neural network with file Input/Output
- * and backpropagation
+ * An A-B-C neural network with file Input/Output and backpropagation
  *
  * Methods:
  * - double randomWeight()
@@ -882,8 +881,8 @@ namespace run
 int main(int argc, char *argv[])
 {
    // get control file from command line
-   assert(2 <= argc); // first argument (index 0 of argv) is always the name of the program
-   controlFileName = argv[1]; // second arguemnt (index 1 of argv) should be file path of control file
+   if (argc == 1) controlFileName = "control.txt"; // default control file name
+   else controlFileName = argv[1];                 // second arguemnt (index 1 of argv) should be file path of control file
 
    configure();
 
