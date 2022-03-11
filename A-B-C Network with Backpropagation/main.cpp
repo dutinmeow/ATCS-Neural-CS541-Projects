@@ -896,7 +896,6 @@ int main(int argc, char *argv[])
       train::saveWeights();
       train::reportResult();
    }
-
    else if (mode == "run")
    {
       run::allocateMemory();
