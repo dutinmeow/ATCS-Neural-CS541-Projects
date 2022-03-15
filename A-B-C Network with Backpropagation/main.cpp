@@ -884,6 +884,8 @@ int main(int argc, char *argv[])
    if (argc == 1) controlFileName = "control.txt"; // default control file name
    else controlFileName = argv[1];                 // second arguemnt (index 1 of argv) should be file path of control file
 
+   auto startTime = std::chrono::high_resolution_clock::now(); // start timer
+
    configure();
 
    if (mode == "train")
@@ -904,4 +906,9 @@ int main(int argc, char *argv[])
       run::runNetwork();
       run::reportResult();
    }
+
+   auto endTime = std::chrono::high_resolution_clock::now(); // end timer
+   printf("Time Taken: %lu microseconds\n", static_cast<unsigned long>(
+      std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count()));
+   printf("==================================================================\n");
 } // int main()
