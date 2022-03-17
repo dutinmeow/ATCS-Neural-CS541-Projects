@@ -4,8 +4,9 @@
 train
 train.txt
 weights.txt
+1
 .1
 1.5
 100000
-0.0007
+0.0000007
 .3

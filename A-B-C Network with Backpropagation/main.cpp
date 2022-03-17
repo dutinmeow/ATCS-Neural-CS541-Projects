@@ -51,6 +51,7 @@ size_t numTestCases;          // number of test cases for training
 double **trainInput;          // input for training data
 double **trainOutput;         // expected outputs for training data
 
+bool loadWeightsFromFile;     // true if load weights from file, false if randomly generate
 double randomWeightMin;       // lower bound for initial randomized weights
 double randomWeightMax;       // upper bound for initial randomized weights
 size_t maxIterations;         // maximum number of allowed iterations for training
@@ -130,11 +131,16 @@ void configure()
 
       if (mode == "train")
       {
+         // load train file name
          std::getline(controlFile, line);
          trainFileName = line;
 
+         // load weights file name
          std::getline(controlFile, line);
          weightsFileName = line;
+
+         std::getline(controlFile, line);
+         loadWeightsFromFile = bool(stoi(line));
 
          // load random weight minimum
          std::getline(controlFile, line);
@@ -260,6 +266,43 @@ namespace train
          }
       }
    } // randomizeWeights()
+
+   /**
+    * @brief Loads weights from file of both input and hidden layer.
+    * @precondition All relevant variables have been initialized and have
+    *    memory allocated for them.
+    * @return Nothing.
+    */ 
+   void loadWeights() 
+   {
+      // load weights
+      std::ifstream weightsFile(weightsFileName);
+
+      if (weightsFile.is_open())
+      {
+         std::string line;
+
+         for (size_t k = 0; k < numInputs; k++)
+         {
+            for (size_t j = 0; j < numHiddens; j++)
+            {
+               std::getline(weightsFile, line);
+               inputWeights[k][j] = std::stod(line);
+            }
+         }
+
+         for (size_t j = 0; j < numHiddens; j++)
+         {
+            for (size_t i = 0; i < numOutputs; i++)
+            {
+               std::getline(weightsFile, line);
+               hiddenWeights[j][i] = std::stod(line);
+            }
+         }
+
+         weightsFile.close();
+      } // if (weightsFile.is_open())
+   }
 
    /**
     * @brief Loads training data from the file trainFileName, which was to 
@@ -869,8 +912,7 @@ namespace run
 /**
  * @brief Executes the neural network with instructions specified in a file passed
  *    through the command line. 
- * @precondition There must be at least one argument passed in the execution of the 
- *    program, containing the relative path of the control file. The control file is
+ * @precondition If a control file is passed through the command line (in arguemnt 1), it is
  *    to hold the following information, one per line, in the following order: 
  *    numInputs(positive integer), numHiddens(positive integer), mode("train"/"run"). 
  *    If the mode is "train", then the file should also contain: randomWeightMin(a double),
@@ -891,7 +933,8 @@ int main(int argc, char *argv[])
    if (mode == "train")
    {
       train::allocateMemory();
-      train::randomizeWeights();
+      if (loadWeightsFromFile) train::loadWeights();
+      else train::randomizeWeights();
       train::loadData();
       train::echoData();
       train::trainNetwork();

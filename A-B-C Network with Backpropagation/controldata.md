@@ -10,6 +10,7 @@
 train
 [train file name]
 [weights file name]
+[load weights from file]
 [random weight minimum]
 [random weight maximum]
 [max iterations]
