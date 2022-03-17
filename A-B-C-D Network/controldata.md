@@ -5,7 +5,8 @@
 `control.txt` training format:
 ```
 [number of inputs]
-[number of hiddens]
+[number of hiddens1]
+[number of hiddens2]
 [number of outputs]
 train
 [train file name]
@@ -23,11 +24,9 @@ train
 3
 3
 3
-3
 train
 train.txt
 weights.txt
-0
 .1
 1.5
 100000

@@ -2,7 +2,7 @@
  * @author Dustin Miao
  * @version February 28 2022
  *
- * An A-B-C neural network with file Input/Output
+ * An A-B-C-D network with backpropogation
  *
  * Methods:
  * - double randomWeight()
@@ -37,23 +37,28 @@
 size_t numInputs;             // number of nodes in input layer
 double *inputs;               // values of nodes in the input layer
 double **inputWeights;        // weights of edges coming from the input layer
-double **dinputWeights;       // change in input weights (for training only)
 
-size_t numHiddens;            // number of nodes in hidden layer
-double *hiddens;              // values of nodes in the hidden layer
-double **hiddenWeights;       // weights of edges coming from the hidden layer
-double **dhiddenWeights;      // change in hidden weights (for training only)
-double *hiddenThetas;         // values of Theta for nodes in the hidden layer
+size_t numHiddens1;            // number of nodes in first hidden layer
+double *hiddens1;              // values of nodes in the first hidden layer
+double **hiddenWeights1;       // weights of edges coming from the first hidden layer
+double *hiddenThetas1;         // values of Theta for nodes in the first hidden layer (for training only)
+
+
+size_t numHiddens2;            // number of nodes in second hidden layer
+double *hiddens2;              // values of nodes in the second hidden layer
+double **hiddenWeights2;       // weights of edges coming from the second hidden layer
+double *hiddenThetas2;         // values of Theta for nodes in the second hidden layer (for training only)
+double *Psi;                   // value of Psi for second hidden nodes (for training only)
 
 size_t numOutputs;            // number of nodes in output layer
 double *outputs;              // output value
-double *outputThetas;         // value of Theta for output node
 double *psi;                  // value of psi for output nodes (for training only)
 
 size_t numTestCases;          // number of test cases for training
 double **trainInput;          // input for training data
 double **trainOutput;         // expected outputs for training data
 
+bool loadWeightsFromFile;     // true if load weights from file, false if randomly generate
 double randomWeightMin;       // lower bound for initial randomized weights
 double randomWeightMax;       // upper bound for initial randomized weights
 size_t maxIterations;         // maximum number of allowed iterations for training
@@ -119,9 +124,13 @@ void configure()
       std::getline(controlFile, line);
       numInputs = std::stoi(line);
 
-      // load number of hidden nodes
+      // load number of first hidden nodes
       std::getline(controlFile, line);
-      numHiddens = std::stoi(line);
+      numHiddens1 = std::stoi(line);
+
+      // load number of second hidden nodes
+      std::getline(controlFile, line);
+      numHiddens2 = std::stoi(line);
 
       // load number of output nodes
       std::getline(controlFile, line);
@@ -133,11 +142,16 @@ void configure()
 
       if (mode == "train")
       {
+         // load train file name
          std::getline(controlFile, line);
          trainFileName = line;
 
+         // load weights file name
          std::getline(controlFile, line);
          weightsFileName = line;
+
+         std::getline(controlFile, line);
+         loadWeightsFromFile = bool(stoi(line));
 
          // load random weight minimum
          std::getline(controlFile, line);
@@ -203,31 +217,38 @@ namespace train
       // allocate memory for input layer
       inputs = new double[numInputs];
       inputWeights = new double*[numInputs];
-      dinputWeights = new double*[numInputs];
 
       // allocate memory for input weights
-      for (size_t k = 0; k < numInputs; k++)
+      for (size_t m = 0; m < numInputs; m++)
       {
-         inputWeights[k] = new double[numHiddens];
-         dinputWeights[k] = new double[numHiddens];
+         inputWeights[m] = new double[numHiddens1];
       }
 
-      // allocate memory for hidden layer
-      hiddens = new double[numHiddens];
-      hiddenWeights = new double*[numHiddens];
-      dhiddenWeights = new double*[numHiddens];
-      hiddenThetas = new double[numHiddens];
+      // allocate memory for first hidden layer
+      hiddens1 = new double[numHiddens1];
+      hiddenWeights1 = new double*[numHiddens1];
+      hiddenThetas1 = new double[numHiddens1];
 
-      // allocate memory for hidden weights
-      for (size_t j = 0; j < numHiddens; j++)
+      // allocate memory for first hidden weights
+      for (size_t k = 0; k < numHiddens1; k++)
       {
-         hiddenWeights[j] = new double[numOutputs];
-         dhiddenWeights[j] = new double[numOutputs];
+         hiddenWeights1[k] = new double[numHiddens2];
+      }
+
+      // allocate memory for second hidden layer
+      hiddens2 = new double[numHiddens2];
+      hiddenWeights2 = new double*[numHiddens2];
+      hiddenThetas2 = new double[numHiddens2];
+      Psi = new double[numHiddens2];
+
+      // allocate memory for second hidden weights
+      for (size_t j = 0; j < numHiddens2; j++)
+      {
+         hiddenWeights2[j] = new double[numOutputs];
       }
 
       // allocate memory for output layer
       outputs = new double[numOutputs];
-      outputThetas = new double[numOutputs];
       psi = new double[numOutputs];
 
       // allocate memory for training data
@@ -251,27 +272,82 @@ namespace train
    void randomizeWeights()
    {
       // iterate through all input weights
-      for (size_t k = 0; k < numInputs; k++)
+      for (size_t m = 0; m < numInputs; m++)
       {
-         for (size_t j = 0; j < numHiddens; j++)
+         for (size_t k = 0; k < numHiddens1; k++)
          {
-            inputWeights[k][j] = randomWeight();
+            inputWeights[m][k] = randomWeight();
          }
       }
 
-      // iterate through all hidden weights
-      for (size_t j = 0; j < numHiddens; j++)
+      // iterate through all first hidden weights
+      for (size_t k = 0; k < numHiddens1; k++)
+      {
+         for (size_t j = 0; j < numHiddens2; j++)
+         {
+            hiddenWeights1[k][j] = randomWeight();
+         }
+      }
+
+      // iterate through all second hidden weights
+      for (size_t j = 0; j < numHiddens2; j++)
       {
          for (size_t i = 0; i < numOutputs; i++)
          {
-            hiddenWeights[j][i] = randomWeight();
+            hiddenWeights2[j][i] = randomWeight();
          }
       }
    } // randomizeWeights()
 
    /**
+    * @brief Loads weights from file of both input and hidden layer.
+    * @precondition All relevant variables have been initialized and have
+    *    memory allocated for them.
+    * @return Nothing.
+    */ 
+   void loadWeights() 
+   {
+      // load weights
+      std::ifstream weightsFile(weightsFileName);
+
+      if (weightsFile.is_open())
+      {
+         std::string line;
+
+         for (size_t m = 0; m < numInputs; m++)
+         {
+            for (size_t k = 0; k < numHiddens1; k++)
+            {
+               std::getline(weightsFile, line);
+               inputWeights[m][k] = std::stod(line);
+            }
+         }
+
+         for (size_t k = 0; k < numHiddens1; k++)
+         {
+            for (size_t j = 0; j < numHiddens2; j++)
+            {
+               std::getline(weightsFile, line);
+               hiddenWeights1[k][j] = std::stod(line);
+            }
+         }
+
+         for (size_t j = 0; j < numHiddens2; j++)
+         {
+            for (size_t i = 0; i < numOutputs; i++)
+            {
+               std::getline(weightsFile, line);
+               hiddenWeights2[j][i] = std::stod(line);
+            }
+         }
+
+         weightsFile.close();
+      } // if (weightsFile.is_open())
+   }
+
+   /**
     * @brief Loads training data from the file trainFileName, which was to 
-    *    be specified within the control file. 
+    *   be specified within the control file. 
     * @precondition numInputs and numTestCases have been initialized to their
     *    appropriate values, and space has been allocated in trainInput and
     *    trainOutput. The file exists, and it has the number of lines
@@ -339,10 +415,10 @@ namespace train
          printf("{");
 
          // print inputs for current test case
-         for (size_t k = 0; k < numInputs; k++)
+         for (size_t m = 0; m < numInputs; m++)
          {
-            printf("%f", trainInput[t][k]);
-            if (k < numInputs - 1) printf(", ");
+            printf("%f", trainInput[t][m]);
+            if (m < numInputs - 1) printf(", ");
          }
 
          printf("} expects {");
@@ -363,22 +439,33 @@ namespace train
       printf("Weights:\n");
       printf("  Input Weights:\n");
 
-      for (size_t k = 0; k < numInputs; k++)
+      for (size_t m = 0; m < numInputs; m++)
       {
-         for (size_t j = 0; j < numHiddens; j++)
+         for (size_t k = 0; k < numHiddens1; k++)
          {
-            printf("    %lu -> %lu : %f\n", k, j, inputWeights[k][j]);
+            printf("    %lu -> %lu : %f\n", m, k, inputWeights[m][k]);
          }
       }
 
       printf("\n");
-      printf("  Hidden Weights:\n");
+      printf("  First Hidden Weights:\n");
 
-      for (size_t j = 0; j < numHiddens; j++)
+      for (size_t k = 0; k < numHiddens1; k++)
+      {
+         for (size_t j = 0; j < numHiddens2; j++)
+         {
+            printf("    %lu -> %lu : %f\n", k, j, hiddenWeights1[k][j]);
+         }
+      }
+
+      printf("\n");
+      printf("  Second Hidden Weights:\n");
+
+      for (size_t j = 0; j < numHiddens2; j++)
       {
          for (size_t i = 0; i < numOutputs; i++)
          {
-            printf("    %lu -> %lu : %f\n", j, i, hiddenWeights[j][i]);
+            printf("    %lu -> %lu : %f\n", j, i, hiddenWeights2[j][i]);
          }
       }
 
@@ -386,11 +473,13 @@ namespace train
 
       // print other training parameters
       printf("Runtime Training Parameters:\n");
+      printf("  numInputs = %lu\n", numInputs);
+      printf("  numHiddens1 = %lu\n", numHiddens1);
+      printf("  numHiddens2 = %lu\n", numHiddens2);
+      printf("  numOutputs = %lu\n", numOutputs);
+      printf("  loadWeightsFromFile = %d\n", loadWeightsFromFile);
       printf("  randomWeightMin = %f\n", randomWeightMin);
       printf("  randomWeightMax = %f\n", randomWeightMax);
-      printf("  numInputs = %lu\n", numInputs);
-      printf("  numHiddens = %lu\n", numHiddens);
-      printf("  numOutputs = %lu\n", numOutputs);
       printf("  maxIterations = %lu\n", maxIterations);
       printf("  errorThreshold = %f\n", errorThreshold);
       printf("  learningFactor = %f\n", learningFactor);
@@ -418,70 +507,68 @@ namespace train
             // copy current test case inputs into network
             std::copy_n(trainInput[t], numInputs, inputs);
 
-            // run test case through network
-            for (size_t j = 0; j < numHiddens; j++)
+            // run test case through network and update psi array
+            for (size_t k = 0; k < numHiddens1; k++)
             {
-               hiddenThetas[j] = 0.0;
-               for (size_t k = 0; k < numInputs; k++)
+               hiddenThetas1[k] = 0.0;
+               for (size_t m = 0; m < numInputs; m++)
                {
-                  hiddenThetas[j] += inputs[k] * inputWeights[k][j];
+                  hiddenThetas1[k] += inputs[m] * inputWeights[m][k];
                }
-               hiddens[j] = activationFunction(hiddenThetas[j]);
+
+               hiddens1[k] = activationFunction(hiddenThetas1[k]);
+            }
+
+            for (size_t j = 0; j < numHiddens2; j++)
+            {
+               hiddenThetas2[j] = 0.0;
+               for (size_t k = 0; k < numHiddens1; k++)
+               {
+                  hiddenThetas2[j] += hiddens1[k] * hiddenWeights1[k][j];
+               }
+
+               hiddens2[j] = activationFunction(hiddenThetas2[j]);
             }
 
             for (size_t i = 0; i < numOutputs; i++)
             {
-               outputThetas[i] = 0.0;
-               for (size_t j = 0; j < numHiddens; j++)
+               double outputTheta = 0.0;
+               for (size_t j = 0; j < numHiddens2; j++)
                {
-                  outputThetas[i] += hiddens[j] * hiddenWeights[j][i];
+                  outputTheta += hiddens2[j] * hiddenWeights2[j][i];
                }
-               outputs[i] = activationFunction(outputThetas[i]);
+
+               outputs[i] = activationFunction(outputTheta);
+               psi[i] = (trainOutput[t][i] - outputs[i]) * derivActivationFunction(outputTheta);
             }
 
-            // determine error and calculate necessary changes
-            for (size_t i = 0; i < numOutputs; i++)
-            {
-               double omega = trainOutput[t][i] - outputs[i];
-               psi[i] = omega * derivActivationFunction(outputThetas[i]);
-               for (size_t j = 0; j < numHiddens; j++)
-               {
-                  double partial = -hiddens[j] * psi[i];
-                  dhiddenWeights[j][i] = -learningFactor * partial;
-               }
-            }
-
-            for (size_t j = 0; j < numHiddens; j++)
+            for (size_t j = 0; j < numHiddens2; j++)
             {
                double Omega = 0.0;
                for (size_t i = 0; i < numOutputs; i++)
                {
-                  Omega += psi[i] * hiddenWeights[j][i];
+                  Omega += psi[i] * hiddenWeights2[j][i];
+                  hiddenWeights2[j][i] += learningFactor * hiddens2[j] * psi[i];
                }
-               double Psi = Omega * derivActivationFunction(hiddenThetas[j]);
-               for (size_t k = 0; k < numInputs; k++)
-               {
-                  double partial = -inputs[k] * Psi;
-                  dinputWeights[k][j] = -learningFactor * partial;
-               }
+
+               Psi[j] = Omega * derivActivationFunction(hiddenThetas2[j]);
             }
 
-            // apply changes to weights
-            for (size_t k = 0; k < numInputs; k++)
+            for (size_t k = 0; k < numHiddens1; k++)
             {
-               for (size_t j = 0; j < numHiddens; j++)
+               double Omega = 0.0;
+               for (size_t j = 0; j < numHiddens2; j++)
                {
-                  inputWeights[k][j] += dinputWeights[k][j];
+                  Omega += Psi[j] * hiddenWeights1[k][j];
+                  hiddenWeights1[k][j] += learningFactor * hiddens1[k] * Psi[j];
                }
-            }
 
-            for (size_t j = 0; j < numHiddens; j++)
-            {
-               for (size_t i = 0; i < numOutputs; i++)
+               double Psik = Omega * derivActivationFunction(hiddenThetas1[k]);
+               for (size_t m = 0; m < numInputs; m++)
                {
-                  hiddenWeights[j][i] += dhiddenWeights[j][i];
+                  inputWeights[m][k] += learningFactor * inputs[m] * Psik;
                }
-            }
+            } // for (size_t k = 0; k < numHiddens1; k++)
          } // for (size_t t = 0; t < numTestCases; t++)
 
          maxError = 0.0;
@@ -493,24 +580,34 @@ namespace train
             std::copy_n(trainInput[t], numInputs, inputs);
 
             // run test case through network
-            for (size_t j = 0; j < numHiddens; j++)
+            for (size_t k = 0; k < numHiddens1; k++)
             {
-               hiddenThetas[j] = 0.0;
-               for (size_t k = 0; k < numInputs; k++)
+               hiddenThetas1[k] = 0.0;
+               for (size_t m = 0; m < numInputs; m++)
                {
-                  hiddenThetas[j] += inputs[k] * inputWeights[k][j];
+                  hiddenThetas1[k] += inputs[m] * inputWeights[m][k];
                }
-               hiddens[j] = activationFunction(hiddenThetas[j]);
+               hiddens1[k] = activationFunction(hiddenThetas1[k]);
+            }
+
+            for (size_t j = 0; j < numHiddens2; j++)
+            {
+               hiddenThetas2[j] = 0.0;
+               for (size_t k = 0; k < numHiddens1; k++)
+               {
+                  hiddenThetas2[j] += hiddens1[k] * hiddenWeights1[k][j];
+               }
+               hiddens2[j] = activationFunction(hiddenThetas2[j]);
             }
 
             for (size_t i = 0; i < numOutputs; i++)
             {
-               outputThetas[i] = 0.0;
-               for (size_t j = 0; j < numHiddens; j++)
+               double outputTheta = 0.0;
+               for (size_t j = 0; j < numHiddens2; j++)
                {
-                  outputThetas[i] += hiddens[j] * hiddenWeights[j][i];
+                  outputTheta += hiddens2[j] * hiddenWeights2[j][i];
                }
-               outputs[i] = activationFunction(outputThetas[i]);
+               outputs[i] = activationFunction(outputTheta);
             }
 
             // calculates error
@@ -546,19 +643,27 @@ namespace train
 
       if (weightsFile.is_open())
       {
-         for (size_t k = 0; k < numInputs; k++)
+         for (size_t m = 0; m < numInputs; m++)
          {
-            for (size_t j = 0; j < numHiddens; j++)
+            for (size_t k = 0; k < numHiddens1; k++)
             {
-               weightsFile << inputWeights[k][j] << '\n';
+               weightsFile << inputWeights[m][k] << '\n';
             }
          }
 
-         for (size_t j = 0; j < numHiddens; j++)
+         for (size_t k = 0; k < numHiddens1; k++)
+         {
+            for (size_t j = 0; j < numHiddens2; j++)
+            {
+               weightsFile << hiddenWeights1[k][j] << '\n';
+            }
+         }
+
+         for (size_t j = 0; j < numHiddens2; j++)
          {
             for (size_t i = 0; i < numOutputs; i++)
             {
-               weightsFile << hiddenWeights[j][i] << '\n';
+               weightsFile << hiddenWeights2[j][i] << '\n';
             }
          }
 
@@ -598,22 +703,33 @@ namespace train
       printf("Weights:\n");
       printf("  Input Weights:\n");
 
-      for (size_t k = 0; k < numInputs; k++)
+      for (size_t m = 0; m < numInputs; m++)
       {
-         for (size_t j = 0; j < numHiddens; j++)
+         for (size_t k = 0; k < numHiddens1; k++)
          {
-            printf("    %lu -> %lu : %f\n", k, j, inputWeights[k][j]);
+            printf("    %lu -> %lu : %f\n", m, k, inputWeights[m][k]);
          }
       }
 
       printf("\n");
-      printf("  Hidden Weights:\n");
+      printf("  First Hidden Weights:\n");
 
-      for (size_t j = 0; j < numHiddens; j++)
+      for (size_t k = 0; k < numHiddens1; k++)
+      {
+         for (size_t j = 0; j < numHiddens2; j++)
+         {
+            printf("    %lu -> %lu : %f\n", k, j, hiddenWeights1[k][j]);
+         }
+      }
+
+      printf("\n");
+      printf("  Second Hidden Weights:\n");
+
+      for (size_t j = 0; j < numHiddens2; j++)
       {
          for (size_t i = 0; i < numOutputs; i++)
          {
-            printf("    %lu -> %lu : %f\n", j, i, hiddenWeights[j][i]);
+            printf("    %lu -> %lu : %f\n", j, i, hiddenWeights2[j][i]);
          }
       }
 
@@ -628,24 +744,34 @@ namespace train
          std::copy_n(trainInput[t], numInputs, inputs);
 
          // run test case through network
-         for (size_t j = 0; j < numHiddens; j++)
+         for (size_t k = 0; k < numHiddens1; k++)
          {
-            hiddenThetas[j] = 0.0;
-            for (size_t k = 0; k < numInputs; k++)
+            hiddenThetas1[k] = 0.0;
+            for (size_t m = 0; m < numInputs; m++)
             {
-               hiddenThetas[j] += inputs[k] * inputWeights[k][j];
+               hiddenThetas1[k] += inputs[m] * inputWeights[m][k];
             }
-            hiddens[j] = activationFunction(hiddenThetas[j]);
+            hiddens1[k] = activationFunction(hiddenThetas1[k]);
+         }
+
+         for (size_t j = 0; j < numHiddens2; j++)
+         {
+            hiddenThetas2[j] = 0.0;
+            for (size_t k = 0; k < numHiddens1; k++)
+            {
+               hiddenThetas2[j] += hiddens1[k] * hiddenWeights1[k][j];
+            }
+            hiddens2[j] = activationFunction(hiddenThetas2[j]);
          }
 
          for (size_t i = 0; i < numOutputs; i++)
          {
-            outputThetas[i] = 0.0;
-            for (size_t j = 0; j < numHiddens; j++)
+            double outputTheta = 0.0;
+            for (size_t j = 0; j < numHiddens2; j++)
             {
-               outputThetas[i] += hiddens[j] * hiddenWeights[j][i];
+               outputTheta += hiddens2[j] * hiddenWeights2[j][i];
             }
-            outputs[i] = activationFunction(outputThetas[i]);
+            outputs[i] = activationFunction(outputTheta);
          }
 
          double error = 0.0;
@@ -710,23 +836,25 @@ namespace run
       // allocate memory for input weights
       for (size_t k = 0; k < numInputs; k++)
       {
-         inputWeights[k] = new double[numHiddens];
+         inputWeights[k] = new double[numHiddens1];
       }
 
-      // allocate memory for hidden layer
-      hiddens = new double[numHiddens];
-      hiddenWeights = new double*[numHiddens];
-      hiddenThetas = new double[numHiddens];
+      // allocate memory for first hidden layer
+      hiddens1 = new double[numHiddens1];
+      hiddenWeights1 = new double*[numHiddens1];
+
+      // allocate memory for second hidden layer
+      hiddens2 = new double[numHiddens2];
+      hiddenWeights2 = new double*[numHiddens2];
 
       // allocate memory for hidden weights
-      for (size_t j = 0; j < numHiddens; j++)
+      for (size_t j = 0; j < numHiddens1; j++)
       {
-         hiddenWeights[j] = new double[numOutputs];
+         hiddenWeights1[j] = new double[numOutputs];
       }
 
       // allocate memory for output layer
       outputs = new double[numOutputs];
-      outputThetas = new double[numOutputs];
    } // void allocateMemory()
 
    /**
@@ -765,21 +893,30 @@ namespace run
       {
          std::string line;
 
-         for (size_t k = 0; k < numInputs; k++)
+         for (size_t m = 0; m < numInputs; m++)
          {
-            for (size_t j = 0; j < numHiddens; j++)
+            for (size_t k = 0; k < numHiddens1; k++)
             {
                std::getline(weightsFile, line);
-               inputWeights[k][j] = std::stod(line);
+               inputWeights[m][k] = std::stod(line);
             }
          }
 
-         for (size_t j = 0; j < numHiddens; j++)
+         for (size_t k = 0; k < numHiddens1; k++)
+         {
+            for (size_t j = 0; j < numHiddens2; j++)
+            {
+               std::getline(weightsFile, line);
+               hiddenWeights1[k][j] = std::stod(line);
+            }
+         }
+
+         for (size_t j = 0; j < numHiddens2; j++)
          {
             for (size_t i = 0; i < numOutputs; i++)
             {
                std::getline(weightsFile, line);
-               hiddenWeights[j][i] = std::stod(line);
+               hiddenWeights2[j][i] = std::stod(line);
             }
          }
 
@@ -820,22 +957,33 @@ namespace run
       printf("Weights:\n");
       printf("  Input Weights:\n");
 
-      for (size_t k = 0; k < numInputs; k++)
+      for (size_t m = 0; m < numInputs; m++)
       {
-         for (size_t j = 0; j < numHiddens; j++)
+         for (size_t k = 0; k < numHiddens1; k++)
          {
-            printf("    %lu -> %lu : %f\n", k, j, inputWeights[k][j]);
+            printf("    %lu -> %lu : %f\n", m, k, inputWeights[m][k]);
          }
       }
 
       printf("\n");
-      printf("  Hidden Weights:\n");
+      printf("  First Hidden Weights:\n");
 
-      for (size_t j = 0; j < numHiddens; j++)
+      for (size_t k = 0; k < numHiddens1; k++)
+      {
+         for (size_t j = 0; j < numHiddens2; j++)
+         {
+            printf("    %lu -> %lu : %f\n", k, j, hiddenWeights1[k][j]);
+         }
+      }
+
+      printf("\n");
+      printf("  Second Hidden Weights:\n");
+
+      for (size_t j = 0; j < numHiddens2; j++)
       {
          for (size_t i = 0; i < numOutputs; i++)
          {
-            printf("    %lu -> %lu : %f\n", j, i, hiddenWeights[j][i]);
+            printf("    %lu -> %lu : %f\n", j, i, hiddenWeights2[j][i]);
          }
       }
 
@@ -844,7 +992,8 @@ namespace run
       // prints other runnning pararmeters
       printf("Parameters:\n");
       printf("  numInputs = %lu\n", numInputs);
-      printf("  numHiddens = %lu\n", numHiddens);
+      printf("  numHiddens1 = %lu\n", numHiddens1);
+      printf("  numHiddens2 = %lu\n", numHiddens2);
       printf("  numOutputs = %lu\n", numOutputs);
 
       printf("==================================================================\n");
@@ -861,24 +1010,34 @@ namespace run
     */
    void runNetwork()
    {
-      for (size_t j = 0; j < numHiddens; j++)
+      for (size_t k = 0; k < numHiddens1; k++)
       {
-         hiddenThetas[j] = 0.0;
-         for (size_t k = 0; k < numInputs; k++)
+         double hiddenTheta1 = 0.0;
+         for (size_t m = 0; m < numInputs; m++)
          {
-            hiddenThetas[j] += inputs[k] * inputWeights[k][j];
+            hiddenTheta1 += inputs[m] * inputWeights[m][k];
          }
-         hiddens[j] = activationFunction(hiddenThetas[j]);
+         hiddens1[k] = activationFunction(hiddenTheta1);
+      }
+
+      for (size_t j = 0; j < numHiddens2; j++)
+      {
+         double hiddenTheta2 = 0.0;
+         for (size_t k = 0; k < numHiddens1; k++)
+         {
+            hiddenTheta2 += hiddens1[k] * hiddenWeights1[k][j];
+         }
+         hiddens2[j] = activationFunction(hiddenTheta2);
       }
 
       for (size_t i = 0; i < numOutputs; i++)
       {
-         outputThetas[i] = 0.0;
-         for (size_t j = 0; j < numHiddens; j++)
+         double outputTheta = 0.0;
+         for (size_t j = 0; j < numHiddens2; j++)
          {
-            outputThetas[i] += hiddens[j] * hiddenWeights[j][i];
+            outputTheta += hiddens2[j] * hiddenWeights2[j][i];
          }
-         outputs[i] = activationFunction(outputThetas[i]);
+         outputs[i] = activationFunction(outputTheta);
       }
    } // void runNetwork()
 
@@ -904,8 +1063,7 @@ namespace run
 /**
  * @brief Executes the neural network with instructions specified in a file passed
  *    through the command line. 
- * @precondition There must be at least one argument passed in the execution of the 
- *    program, containing the relative path of the control file. The control file is
+ * @precondition If a control file is passed through the command line (in arguemnt 1), it is
  *    to hold the following information, one per line, in the following order: 
  *    numInputs(positive integer), numHiddens(positive integer), mode("train"/"run"). 
  *    If the mode is "train", then the file should also contain: randomWeightMin(a double),
@@ -916,22 +1074,24 @@ namespace run
 int main(int argc, char *argv[])
 {
    // get control file from command line
-   assert(2 <= argc); // first argument (index 0 of argv) is always the name of the program
-   controlFileName = argv[1]; // second arguemnt (index 1 of argv) should be file path of control file
+   if (argc == 1) controlFileName = "control.txt"; // default control file name
+   else controlFileName = argv[1];                 // second arguemnt (index 1 of argv) should be file path of control file
+
+   auto startTime = std::chrono::high_resolution_clock::now(); // start timer
 
    configure();
 
    if (mode == "train")
    {
       train::allocateMemory();
-      train::randomizeWeights();
+      if (loadWeightsFromFile) train::loadWeights();
+      else train::randomizeWeights();
       train::loadData();
       train::echoData();
       train::trainNetwork();
       train::saveWeights();
       train::reportResult();
    }
-
    else if (mode == "run")
    {
       run::allocateMemory();
@@ -940,4 +1100,9 @@ int main(int argc, char *argv[])
       run::runNetwork();
       run::reportResult();
    }
+
+   auto endTime = std::chrono::high_resolution_clock::now(); // end timer
+   printf("Time Taken: %lu microseconds\n", static_cast<unsigned long>(
+      std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count()));
+   printf("==================================================================\n");
 } // int main()
