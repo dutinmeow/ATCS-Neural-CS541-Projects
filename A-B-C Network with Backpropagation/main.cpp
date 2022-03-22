@@ -418,10 +418,10 @@ namespace train
       }
 
       printf("------------------------------------------------------------------\n");
-
+         
       // print other training parameters
       printf("Runtime Training Parameters:\n");
-		printf("  loadWeightsFromFile = %d\n", loadWeightsFromFile);
+      printf("  loadWeightsFromFile = %d\n", loadWeightsFromFile);
       printf("  randomWeightMin = %f\n", randomWeightMin);
       printf("  randomWeightMax = %f\n", randomWeightMax);
       printf("  numInputs = %lu\n", numInputs);

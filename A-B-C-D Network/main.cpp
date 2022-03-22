@@ -11,6 +11,7 @@
  *
  * - void train::allocateMemory()
  * - void train::randomizeWeights()
+ * - void train::loadWeights()
  * - void train::loadData()
  * - void train::echoData()
  * - void train::trainNetwork()
@@ -25,12 +26,9 @@
 
 #include <cassert>
 #include <chrono>
-#include <cmath>
-#include <cstddef>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
-#include <iterator>
 #include <random>
 #include <sstream>
 
