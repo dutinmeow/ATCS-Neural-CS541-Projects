@@ -1,7 +1,5 @@
 <!-- This file contains data for `control.txt`. It is NOT called by `main.cpp`. -->
 
-
-
 `control.txt` training format:
 ```
 [number of inputs]
@@ -22,12 +20,14 @@ train
 `control.txt` example training configuration:
 ```
 3
-3
+5
+20
 3
 train
 train.txt
 weights.txt
-.1
+0
+-1
 1.5
 100000
 0.0007
@@ -46,10 +46,12 @@ run
 
 `control.txt` example running configuration
 ```
-3
-3
+2
+5
+20
 3
 run
 inputs.txt
 weights.txt
+
 ```

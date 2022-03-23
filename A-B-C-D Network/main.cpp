@@ -1,6 +1,8 @@
+#define _GLIBCXX_DEBUG
+
 /**
  * @author Dustin Miao
- * @version February 28 2022
+ * @version March 22 2022
  *
  * An A-B-C-D network with backpropogation
  *
@@ -40,7 +42,6 @@ size_t numHiddens1;            // number of nodes in first hidden layer
 double *hiddens1;              // values of nodes in the first hidden layer
 double **hiddenWeights1;       // weights of edges coming from the first hidden layer
 double *hiddenThetas1;         // values of Theta for nodes in the first hidden layer (for training only)
-
 
 size_t numHiddens2;            // number of nodes in second hidden layer
 double *hiddens2;              // values of nodes in the second hidden layer
@@ -841,14 +842,21 @@ namespace run
       hiddens1 = new double[numHiddens1];
       hiddenWeights1 = new double*[numHiddens1];
 
+
+      // allocate memory for hidden weights
+      for (size_t j = 0; j < numHiddens1; j++)
+      {
+         hiddenWeights1[j] = new double[numHiddens2];
+      }
+
       // allocate memory for second hidden layer
       hiddens2 = new double[numHiddens2];
       hiddenWeights2 = new double*[numHiddens2];
 
       // allocate memory for hidden weights
-      for (size_t j = 0; j < numHiddens1; j++)
+      for (size_t j = 0; j < numHiddens2; j++)
       {
-         hiddenWeights1[j] = new double[numOutputs];
+         hiddenWeights2[j] = new double[numOutputs];
       }
 
       // allocate memory for output layer
