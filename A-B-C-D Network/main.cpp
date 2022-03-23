@@ -434,6 +434,7 @@ namespace train
 
       printf("------------------------------------------------------------------\n");
 
+      /*
       // print randomized weights
       printf("Weights:\n");
       printf("  Input Weights:\n");
@@ -469,6 +470,7 @@ namespace train
       }
 
       printf("------------------------------------------------------------------\n");
+      */
 
       // print other training parameters
       printf("Runtime Training Parameters:\n");
@@ -698,6 +700,7 @@ namespace train
 
       printf("\n==================================================================\n");
 
+      /*
       // prints final calculated weight values
       printf("Weights:\n");
       printf("  Input Weights:\n");
@@ -733,6 +736,7 @@ namespace train
       }
 
       printf("------------------------------------------------------------------\n");
+      */
 
       // prints test cases, network output, and error
       printf("Truth Table:\n");
@@ -959,6 +963,7 @@ namespace run
 
       printf("------------------------------------------------------------------\n");
 
+      /*
       // prints weights
       printf("Weights:\n");
       printf("  Input Weights:\n");
@@ -994,6 +999,7 @@ namespace run
       }
 
       printf("------------------------------------------------------------------\n");
+      */
 
       // prints other runnning pararmeters
       printf("Parameters:\n");
