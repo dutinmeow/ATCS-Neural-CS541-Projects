@@ -2,7 +2,7 @@
  * @author Dustin Miao
  * @version February 28 2022
  *
- * An A-B-C neural network with file Input/Output and backpropagation
+ * An A-B-C neural network with file input/output and backpropagation
  *
  * Methods:
  * - double randomWeight()
@@ -282,6 +282,15 @@ namespace train
       {
          std::string line;
 
+         std::getline(weightsFile, line);
+         assert(stoi(line) == (int)numInputs);
+
+         std::getline(weightsFile, line);
+         assert(stoi(line) == (int)numHiddens);
+
+         std::getline(weightsFile, line);
+         assert(stoi(line) == (int)numOutputs);
+
          for (size_t k = 0; k < numInputs; k++)
          {
             for (size_t j = 0; j < numHiddens; j++)
@@ -557,6 +566,9 @@ namespace train
 
       if (weightsFile.is_open())
       {
+         // store training parameters
+         weightsFile << numInputs << '\n' << numHiddens << '\n' << numOutputs << '\n';
+
          for (size_t k = 0; k < numInputs; k++)
          {
             for (size_t j = 0; j < numHiddens; j++)
@@ -605,6 +617,7 @@ namespace train
 
       printf("\n==================================================================\n");
 
+      /*
       // prints final calculated weight values
       printf("Weights:\n");
       printf("  Input Weights:\n");
@@ -629,6 +642,7 @@ namespace train
       }
 
       printf("------------------------------------------------------------------\n");
+      */
 
       // prints test cases, network output, and error
       printf("Truth Table:\n");
@@ -774,6 +788,15 @@ namespace run
       {
          std::string line;
 
+         std::getline(weightsFile, line);
+         assert(stoi(line) == (int)numInputs);
+
+         std::getline(weightsFile, line);
+         assert(stoi(line) == (int)numHiddens);
+
+         std::getline(weightsFile, line);
+         assert(stoi(line) == (int)numOutputs);
+
          for (size_t k = 0; k < numInputs; k++)
          {
             for (size_t j = 0; j < numHiddens; j++)
@@ -825,6 +848,7 @@ namespace run
 
       printf("------------------------------------------------------------------\n");
 
+      /*
       // prints weights
       printf("Weights:\n");
       printf("  Input Weights:\n");
@@ -849,6 +873,7 @@ namespace run
       }
 
       printf("------------------------------------------------------------------\n");
+      */
 
       // prints other runnning pararmeters
       printf("Parameters:\n");
