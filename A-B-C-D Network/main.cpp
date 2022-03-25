@@ -1,5 +1,3 @@
-#define _GLIBCXX_DEBUG
-
 /**
  * @author Dustin Miao
  * @version March 22 2022
@@ -312,6 +310,18 @@ namespace train
       if (weightsFile.is_open())
       {
          std::string line;
+
+         std::getline(weightsFile, line);
+         assert(stoi(line) == (int)numInputs);
+
+         std::getline(weightsFile, line);
+         assert(stoi(line) == (int)numHiddens1);
+
+         std::getline(weightsFile, line);
+         assert(stoi(line) == (int)numHiddens2);
+
+         std::getline(weightsFile, line);
+         assert(stoi(line) == (int)numOutputs);
 
          for (size_t m = 0; m < numInputs; m++)
          {
@@ -644,6 +654,10 @@ namespace train
 
       if (weightsFile.is_open())
       {
+         // store training parameters
+         weightsFile << numInputs << '\n' << numHiddens1 << '\n' << numHiddens2 << '\n' << numOutputs << '\n';
+
+
          for (size_t m = 0; m < numInputs; m++)
          {
             for (size_t k = 0; k < numHiddens1; k++)
@@ -902,6 +916,18 @@ namespace run
       if (weightsFile.is_open())
       {
          std::string line;
+
+         std::getline(weightsFile, line);
+         assert(stoi(line) == (int)numInputs);
+
+         std::getline(weightsFile, line);
+         assert(stoi(line) == (int)numHiddens1);
+
+         std::getline(weightsFile, line);
+         assert(stoi(line) == (int)numHiddens2);
+
+         std::getline(weightsFile, line);
+         assert(stoi(line) == (int)numOutputs);
 
          for (size_t m = 0; m < numInputs; m++)
          {
