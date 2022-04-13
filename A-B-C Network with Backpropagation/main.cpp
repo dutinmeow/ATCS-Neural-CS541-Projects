@@ -34,6 +34,8 @@
 #include <random>
 #include <sstream>
 
+#pragma region declarations
+
 size_t numInputs;             // number of nodes in input layer
 double *inputs;               // values of nodes in the input layer
 double **inputWeights;        // weights of edges coming from the input layer
@@ -67,6 +69,8 @@ std::string inputsFileName;   // relative path of inputs file (for running only)
 std::string weightsFileName;  // relative path of weights file (for both training and running)
 
 std::mt19937 rng(std::chrono::system_clock::now().time_since_epoch().count()); // random number generator seeded with current time
+
+#pragma endregion declaration
 
 /**
  * @brief Generates a random number between randomWeightMin and randomWeightMax with
