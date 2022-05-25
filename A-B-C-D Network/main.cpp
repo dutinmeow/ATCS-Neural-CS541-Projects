@@ -2,26 +2,26 @@
  * @author Dustin Miao
  * @version March 22 2022
  *
- * An A-B-C-D network with backpropogation
+ * An A-B-C-D network with backpropagation
  *
- * Methods:
- * - double randomWeight()
- * - double activationFunction(double x)
- * - double derivActivationFunction(double x)
+ * Table of Contents:
+ * double randomWeight()
+ * double activationFunction(double x)
+ * double derivActivationFunction(double x)
  *
- * - void train::allocateMemory()
- * - void train::randomizeWeights()
- * - void train::loadWeights()
- * - void train::loadData()
- * - void train::echoData()
- * - void train::trainNetwork()
- * - void train::reportResult()
+ * void train::allocateMemory()
+ * void train::randomizeWeights()
+ * void train::loadWeights()
+ * void train::loadData()
+ * void train::echoData()
+ * void train::trainNetwork()
+ * void train::reportResult()
  *
- * - void run::allocateMemory()
- * - void run::loadData()
- * - void run::echoData()
- * - void run::runNetwork()
- * - void run::reportResult()
+ * void run::allocateMemory()
+ * void run::loadData()
+ * void run::echoData()
+ * void run::runNetwork()
+ * void run::reportResult()
  */
 
 #include <cassert>
@@ -32,43 +32,44 @@
 #include <random>
 #include <sstream>
 
-size_t numInputs;             // number of nodes in input layer
-double *inputs;               // values of nodes in the input layer
-double **inputWeights;        // weights of edges coming from the input layer
+size_t numInputs;                  // number of nodes in input layer
+double *inputs;                    // values of nodes in the input layer
+double **inputWeights;             // weights of edges coming from the input layer
 
-size_t numHiddens1;            // number of nodes in first hidden layer
-double *hiddens1;              // values of nodes in the first hidden layer
-double **hiddenWeights1;       // weights of edges coming from the first hidden layer
-double *hiddenThetas1;         // values of Theta for nodes in the first hidden layer (for training only)
+size_t numHiddens1;                // number of nodes in first hidden layer
+double *hiddens1;                  // values of nodes in the first hidden layer
+double **hiddenWeights1;           // weights of edges coming from the first hidden layer
+double *hiddenThetas1;             // values of Theta for nodes in the first hidden layer (for training only)
 
-size_t numHiddens2;            // number of nodes in second hidden layer
-double *hiddens2;              // values of nodes in the second hidden layer
-double **hiddenWeights2;       // weights of edges coming from the second hidden layer
-double *hiddenThetas2;         // values of Theta for nodes in the second hidden layer (for training only)
-double *Psi;                   // value of Psi for second hidden nodes (for training only)
+size_t numHiddens2;                // number of nodes in second hidden layer
+double *hiddens2;                  // values of nodes in the second hidden layer
+double **hiddenWeights2;           // weights of edges coming from the second hidden layer
+double *hiddenThetas2;             // values of Theta for nodes in the second hidden layer (for training only)
+double *Psi;                       // value of Psi for second hidden nodes (for training only)
 
-size_t numOutputs;            // number of nodes in output layer
-double *outputs;              // output value
-double *psi;                  // value of psi for output nodes (for training only)
+size_t numOutputs;                 // number of nodes in output layer
+double *outputs;                   // output value
+double *psi;                       // value of psi for output nodes (for training only)
 
-size_t numTestCases;          // number of test cases for training
-double **trainInput;          // input for training data
-double **trainOutput;         // expected outputs for training data
+size_t numTestCases;               // number of test cases for training
+double **trainInput;               // input for training data
+double **trainOutput;              // expected outputs for training data
 
-bool loadWeightsFromFile;     // true if load weights from file, false if randomly generate
-double randomWeightMin;       // lower bound for initial randomized weights
-double randomWeightMax;       // upper bound for initial randomized weights
-size_t maxIterations;         // maximum number of allowed iterations for training
-double errorThreshold;        // error threshold to finish training
-double learningFactor;        // learning factor
-size_t iteration;             // number of iterations
-double maxError;              // maximum error over all test cases
+bool loadWeightsFromFile;          // true if load weights from file, false if randomly generate
+double randomWeightMin;            // lower bound for initial randomized weights
+double randomWeightMax;            // upper bound for initial randomized weights
+size_t maxIterations;              // maximum number of allowed iterations for training
+double errorThreshold;             // error threshold to finish training
+double learningFactor;             // learning factor
+size_t iteration;                  // number of iterations
+double maxError;                   // maximum error over all test cases
 
-std::string mode;               // current mode (either "train" or "run")
-std::string controlFileName;  // relative path of control file
-std::string trainFileName;    // relative path of train data file (for training only)
-std::string inputsFileName;   // relative path of inputs file (for running only)
-std::string weightsFileName;  // relative path of weights file (for both training and running)
+std::string mode;                  // current mode (either "train" or "run")
+std::string controlFileName;       // relative path of control file
+std::string trainFileName;         // relative path of train data file (for training only)
+std::string inputsFileName;        // relative path of inputs file (for running only)
+std::string inputWeightsFileName;  // relative path of input weights file (for both training and running)
+std::string outputWeightsFileName; // relative path of input weights file (for both training)
 
 std::mt19937 rng(std::chrono::system_clock::now().time_since_epoch().count()); // random number generator seeded with current time
 
@@ -145,7 +146,11 @@ void configure()
 
          // load weights file name
          std::getline(controlFile, line);
-         weightsFileName = line;
+         inputWeightsFileName = line;
+
+         // load weights file name
+         std::getline(controlFile, line);
+         outputWeightsFileName = line;
 
          std::getline(controlFile, line);
          loadWeightsFromFile = bool(stoi(line));
@@ -191,7 +196,7 @@ void configure()
          inputsFileName = line;
 
          std::getline(controlFile, line);
-         weightsFileName = line;
+         inputWeightsFileName = line;
       }
 
       controlFile.close();
@@ -304,25 +309,30 @@ namespace train
     */ 
    void loadWeights() 
    {
-      // load weights
-      std::ifstream weightsFile(weightsFileName);
+      // open file with weights
+      std::ifstream weightsFile(inputWeightsFileName);
 
       if (weightsFile.is_open())
       {
          std::string line;
 
+         // load number of inputs
          std::getline(weightsFile, line);
          assert(stoi(line) == (int)numInputs);
 
+         // load number of hidden 1s
          std::getline(weightsFile, line);
          assert(stoi(line) == (int)numHiddens1);
 
+         // load number of hidden 2s
          std::getline(weightsFile, line);
          assert(stoi(line) == (int)numHiddens2);
 
+         // load number of outputs
          std::getline(weightsFile, line);
          assert(stoi(line) == (int)numOutputs);
 
+         // load weights in first layer
          for (size_t m = 0; m < numInputs; m++)
          {
             for (size_t k = 0; k < numHiddens1; k++)
@@ -332,6 +342,7 @@ namespace train
             }
          }
 
+         // load weights in second layer
          for (size_t k = 0; k < numHiddens1; k++)
          {
             for (size_t j = 0; j < numHiddens2; j++)
@@ -341,6 +352,7 @@ namespace train
             }
          }
 
+         // load weights in third layer
          for (size_t j = 0; j < numHiddens2; j++)
          {
             for (size_t i = 0; i < numOutputs; i++)
@@ -367,7 +379,7 @@ namespace train
     */
    void loadData()
    {
-      // load training data
+      // open file with training data
       std::ifstream trainFile(trainFileName);
 
       if (trainFile.is_open())
@@ -413,7 +425,8 @@ namespace train
       // print file locations
       printf("control file path = \"%s\"\n", controlFileName.c_str());
       printf("train file path = \"%s\"\n", trainFileName.c_str());
-      printf("weights file path = \"%s\"\n", weightsFileName.c_str());
+      printf("weights file path = \"%s\"\n", inputWeightsFileName.c_str());
+      printf("weights file path = \"%s\"\n", outputWeightsFileName.c_str());
 
       printf("==================================================================\n");
 
@@ -518,7 +531,7 @@ namespace train
             // copy current test case inputs into network
             std::copy_n(trainInput[t], numInputs, inputs);
 
-            // run test case through network and update psi array
+            // run test case through network and update psi array (forward propagation)
             for (size_t k = 0; k < numHiddens1; k++)
             {
                hiddenThetas1[k] = 0.0;
@@ -553,6 +566,7 @@ namespace train
                psi[i] = (trainOutput[t][i] - outputs[i]) * derivActivationFunction(outputTheta);
             }
 
+            // backpropagation on second hidden layer
             for (size_t j = 0; j < numHiddens2; j++)
             {
                double Omega = 0.0;
@@ -565,6 +579,7 @@ namespace train
                Psi[j] = Omega * derivActivationFunction(hiddenThetas2[j]);
             }
 
+            // backpropagation on first hidden layer
             for (size_t k = 0; k < numHiddens1; k++)
             {
                double Omega = 0.0;
@@ -593,22 +608,22 @@ namespace train
             // run test case through network
             for (size_t k = 0; k < numHiddens1; k++)
             {
-               hiddenThetas1[k] = 0.0;
+               double varHiddenThetas1 = 0.0;
                for (size_t m = 0; m < numInputs; m++)
                {
-                  hiddenThetas1[k] += inputs[m] * inputWeights[m][k];
+                  varHiddenThetas1 += inputs[m] * inputWeights[m][k];
                }
-               hiddens1[k] = activationFunction(hiddenThetas1[k]);
+               hiddens1[k] = activationFunction(varHiddenThetas1);
             }
 
             for (size_t j = 0; j < numHiddens2; j++)
             {
-               hiddenThetas2[j] = 0.0;
+               double varHiddenThetas2 = 0.0;
                for (size_t k = 0; k < numHiddens1; k++)
                {
-                  hiddenThetas2[j] += hiddens1[k] * hiddenWeights1[k][j];
+                  varHiddenThetas2 += hiddens1[k] * hiddenWeights1[k][j];
                }
-               hiddens2[j] = activationFunction(hiddenThetas2[j]);
+               hiddens2[j] = activationFunction(varHiddenThetas2);
             }
 
             for (size_t i = 0; i < numOutputs; i++)
@@ -639,25 +654,25 @@ namespace train
    } // void trainNetwork()
 
    /**
-    * @brief Saves the final weight values to weightsFileName, which was 
+    * @brief Saves the final weight values to outputWeightsFileName, which was 
     *    to be specified within the control file. 
     * @precondition All relevant variables have been initialized and have
     *    memory allocated for them.
-    * @postcondition The file located at weightsFileName 
+    * @postcondition The file located at outputWeightsFileName 
     *    has had the weights updated to their new calculated values.
     * @return Nothing.
     */
    void saveWeights()
    {
-      // write to output file
-      std::ofstream weightsFile(weightsFileName);
+      // open to output file
+      std::ofstream weightsFile(outputWeightsFileName);
 
       if (weightsFile.is_open())
       {
          // store training parameters
          weightsFile << numInputs << '\n' << numHiddens1 << '\n' << numHiddens2 << '\n' << numOutputs << '\n';
 
-
+         // store finalized weights in first layer
          for (size_t m = 0; m < numInputs; m++)
          {
             for (size_t k = 0; k < numHiddens1; k++)
@@ -666,6 +681,7 @@ namespace train
             }
          }
 
+         // store finalized weights in second layer
          for (size_t k = 0; k < numHiddens1; k++)
          {
             for (size_t j = 0; j < numHiddens2; j++)
@@ -674,6 +690,7 @@ namespace train
             }
          }
 
+         // // store finalized weights in first layer
          for (size_t j = 0; j < numHiddens2; j++)
          {
             for (size_t i = 0; i < numOutputs; i++)
@@ -793,7 +810,7 @@ namespace train
 
          double error = 0.0;
 
-         // calculates error and updates maxError
+         // calculates error 
          for (size_t i = 0; i < numOutputs; i++)
          {
             double v = trainOutput[t][i] - outputs[i];
@@ -801,30 +818,34 @@ namespace train
          }
 
          error *= 0.5;
+
+         // output calculated data
          printf("  %lu {", t);
 
+         // print input of test case
          for (size_t k = 0; k < numInputs; k++)
          {
             printf("%f", trainInput[t][k]);
             if (k < numInputs - 1) printf(", ");
          }
 
+         // print expected output
          printf("} expects {");
-
          for (size_t i = 0; i < numOutputs; i++)
          {
             printf("%f", trainOutput[t][i]);
             if (i < numOutputs - 1) printf(", ");
          }
 
+         // print actual output
          printf("}, outputs {");
-
          for (size_t i = 0; i < numOutputs; i++)
          {
             printf("%f", outputs[i]);
             if (i < numOutputs - 1) printf(", ");
          }
 
+         // print error
          printf("} with error {%f}\n", error);
       } // for (size_t t = 0; t < numTestCases; t++)
 
@@ -883,7 +904,7 @@ namespace run
 
    /**
     * @brief Loads input data from the file inputsFileName 
-    *    and loads weight data from the file weightsFileName, both of which
+    *    and loads weight data from the file inputWeightsFileName, both of which
     *    are to be specified in the control file. 
     * @precondition All relevant variables have been initialized and have
     *    memory allocated for them. The inputs file exists, and it must have
@@ -894,7 +915,7 @@ namespace run
     */
    void loadData()
    {
-      // load inputs
+      // open file with inputs
       std::ifstream inputsFile(inputsFileName);
 
       if (inputsFile.is_open())
@@ -903,6 +924,7 @@ namespace run
 
          for (size_t k = 0; k < numInputs; k++)
          {
+            // get inputs line by line
             std::getline(inputsFile, line);
             inputs[k] = std::stod(line);
          }
@@ -910,25 +932,30 @@ namespace run
          inputsFile.close();
       }
 
-      // load weights
-      std::ifstream weightsFile(weightsFileName);
+      // open file with weights
+      std::ifstream weightsFile(inputWeightsFileName);
 
       if (weightsFile.is_open())
       {
          std::string line;
 
+         // load number of inputs
          std::getline(weightsFile, line);
          assert(stoi(line) == (int)numInputs);
 
+         // load number of hidden 1s
          std::getline(weightsFile, line);
          assert(stoi(line) == (int)numHiddens1);
 
+         // load number of hidden 2s
          std::getline(weightsFile, line);
          assert(stoi(line) == (int)numHiddens2);
 
+         // load number of outputs
          std::getline(weightsFile, line);
          assert(stoi(line) == (int)numOutputs);
 
+         // load weights in first layer
          for (size_t m = 0; m < numInputs; m++)
          {
             for (size_t k = 0; k < numHiddens1; k++)
@@ -938,6 +965,7 @@ namespace run
             }
          }
 
+         // load weights in second layer
          for (size_t k = 0; k < numHiddens1; k++)
          {
             for (size_t j = 0; j < numHiddens2; j++)
@@ -947,6 +975,7 @@ namespace run
             }
          }
 
+         // load weights in third layer
          for (size_t j = 0; j < numHiddens2; j++)
          {
             for (size_t i = 0; i < numOutputs; i++)
@@ -975,7 +1004,7 @@ namespace run
       // print file locations
       printf("control file path = \"%s\"\n", controlFileName.c_str());
       printf("inputs file path = \"%s\"\n", inputsFileName.c_str());
-      printf("weights file path = \"%s\"\n", weightsFileName.c_str());
+      printf("weights file path = \"%s\"\n", inputWeightsFileName.c_str());
 
       printf("==================================================================\n");
 
@@ -1048,6 +1077,7 @@ namespace run
     */
    void runNetwork()
    {
+      // process first hidden layer
       for (size_t k = 0; k < numHiddens1; k++)
       {
          double hiddenTheta1 = 0.0;
@@ -1058,6 +1088,7 @@ namespace run
          hiddens1[k] = activationFunction(hiddenTheta1);
       }
 
+      // process second hidden layer
       for (size_t j = 0; j < numHiddens2; j++)
       {
          double hiddenTheta2 = 0.0;
@@ -1068,6 +1099,7 @@ namespace run
          hiddens2[j] = activationFunction(hiddenTheta2);
       }
 
+      // process output layer
       for (size_t i = 0; i < numOutputs; i++)
       {
          double outputTheta = 0.0;
@@ -1141,6 +1173,6 @@ int main(int argc, char *argv[])
 
    auto endTime = std::chrono::high_resolution_clock::now(); // end timer
    printf("Time Taken: %lu microseconds\n", static_cast<unsigned long>(
-      std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count()));
+      std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count()));  // print time used
    printf("==================================================================\n");
 } // int main()

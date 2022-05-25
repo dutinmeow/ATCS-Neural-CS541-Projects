@@ -8,7 +8,8 @@
 [number of outputs]
 train
 [train file name]
-[weights file name]
+[input weights file name]
+[outputs weights file name]
 [load weights from file]
 [random weight minimum]
 [random weight maximum]
