@@ -32,24 +32,10 @@
 #include <random>
 #include <sstream>
 
-size_t numInputs;                  // number of nodes in input layer
-double *inputs;                    // values of nodes in the input layer
-double **inputWeights;             // weights of edges coming from the input layer
-
-size_t numHiddens1;                // number of nodes in first hidden layer
-double *hiddens1;                  // values of nodes in the first hidden layer
-double **hiddenWeights1;           // weights of edges coming from the first hidden layer
-double *hiddenThetas1;             // values of Theta for nodes in the first hidden layer (for training only)
-
-size_t numHiddens2;                // number of nodes in second hidden layer
-double *hiddens2;                  // values of nodes in the second hidden layer
-double **hiddenWeights2;           // weights of edges coming from the second hidden layer
-double *hiddenThetas2;             // values of Theta for nodes in the second hidden layer (for training only)
-double *Psi;                       // value of Psi for second hidden nodes (for training only)
-
-size_t numOutputs;                 // number of nodes in output layer
-double *outputs;                   // output value
-double *psi;                       // value of psi for output nodes (for training only)
+size_t numLayers;
+size_t *layerSizes;
+double **layerVals;
+double ***layerWeights;
 
 size_t numTestCases;               // number of test cases for training
 double **trainInput;               // input for training data
